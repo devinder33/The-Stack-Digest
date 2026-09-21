@@ -16,12 +16,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.thestackdigest.app.domain.model.Article
 import com.thestackdigest.app.ui.components.AppBar
 import com.thestackdigest.app.ui.components.ArticleCard
@@ -29,9 +28,14 @@ import com.thestackdigest.app.ui.components.ArticleCard
 @Composable
 fun FeedRoute(
     paddingValues: PaddingValues,
-    // viewModel: FeedViewModel = hiltViewModel()
+     viewModel: FeedViewModel = hiltViewModel()
 ) {
-    FeedScreen(paddingValues)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    FeedScreen(
+        paddingValues,
+        uiState = uiState,
+        onCategorySelected = viewModel::onCategorySelected
+    )
 }
 
 @Preview(
@@ -40,11 +44,23 @@ fun FeedRoute(
 )
 @Composable
 private fun FeedScreenPreview() {
-    FeedScreen(PaddingValues(16.dp))
+
+    FeedScreen(
+        paddingValues = PaddingValues(16.dp),
+        uiState = FeedUiState(
+            articles = fakeArticles,
+            selectedCategory = "All"
+        ),
+        onCategorySelected = {}
+    )
 }
 
 @Composable
-fun FeedScreen(paddingValues: PaddingValues) {
+fun FeedScreen(
+    paddingValues: PaddingValues,
+    uiState: FeedUiState,
+    onCategorySelected: (String) -> Unit
+) {
     val categories = listOf(
         "All",
         "Android",
@@ -52,17 +68,6 @@ fun FeedScreen(paddingValues: PaddingValues) {
         "AI",
         "Web"
     )
-    var selectedCategory by rememberSaveable {
-        mutableStateOf("All")
-    }
-
-    val filteredArticles = if (selectedCategory == "All") {
-        fakeArticles
-    } else {
-        fakeArticles.filter { article ->
-            selectedCategory in article.categories
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -73,13 +78,13 @@ fun FeedScreen(paddingValues: PaddingValues) {
 
         Chips(
             categories = categories,
-            selectedCategory = selectedCategory,
-            onCategoryClicked = { category ->
-                selectedCategory = category
-            }
+            selectedCategory = uiState.selectedCategory,
+            onCategoryClicked = onCategorySelected
         )
 
-        Articles(filteredArticles)
+        Articles(
+            filteredList = uiState.articles
+        )
 
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.painterResource
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.thestackdigest.app.R
@@ -29,7 +30,7 @@ fun BottomNavigationBar(
         NavigationBarItem(
             selected = currentRoute == Routes.FEED,
             onClick = {
-                navController.navigate(Routes.FEED)
+                navigateTo(navController, Routes.FEED)
             },
             icon = {
                 Icon(
@@ -45,7 +46,7 @@ fun BottomNavigationBar(
         NavigationBarItem(
             selected = currentRoute == Routes.SAVED,
             onClick = {
-                navController.navigate(Routes.SAVED)
+                navigateTo(navController, Routes.SAVED)
             },
             icon = {
                 Icon(
@@ -61,7 +62,7 @@ fun BottomNavigationBar(
         NavigationBarItem(
             selected = currentRoute == Routes.SETTINGS,
             onClick = {
-                navController.navigate(Routes.SETTINGS)
+                navigateTo(navController, Routes.SETTINGS)
             },
             icon = {
                 Icon(
@@ -73,5 +74,17 @@ fun BottomNavigationBar(
                 Text("Settings")
             }
         )
+    }
+}
+
+fun navigateTo(navController: NavHostController, route: String) {
+    navController.navigate(route) {
+
+        popUpTo(navController.graph.findStartDestination().id) {
+            saveState = true
+        }
+
+        launchSingleTop = true
+        restoreState = true
     }
 }
