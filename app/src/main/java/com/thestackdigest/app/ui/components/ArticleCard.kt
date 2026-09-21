@@ -1,8 +1,8 @@
 package com.thestackdigest.app.ui.components
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -22,24 +22,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.thestackdigest.app.R
+import com.thestackdigest.app.domain.model.Article
+import com.thestackdigest.app.ui.utils.formatRelativeTime
 
 
-@Preview
+/*@Preview
 @Composable
 fun ArticleCardPreview() {
     ArticleCard()
-}
+}*/
 
 @Composable
-fun ArticleCard(modifier: Modifier = Modifier) {
+fun ArticleCard(article: Article, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -54,32 +54,35 @@ fun ArticleCard(modifier: Modifier = Modifier) {
         ) {
             // Left column
             ArticleInfo(
+                article,
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 12.dp)
             )
 
             // Right column
-            ArticleThumbnail()
+            ArticleThumbnail(
+                article
+            )
         }
     }
 }
 
 @Composable
-fun ArticleInfo(modifier: Modifier = Modifier) {
+fun ArticleInfo(article: Article, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        AuthorDetail()
+        SourceInfo(article)
 
         //title
         Text(
-            "What's new in Android 15 for developers",
+            article.title,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
 
         //Description
         Text(
-            "n fact, inserting any fantasy text or a famous text, be it a poem, a speech, a literary passage, a song's text, etc., our text generator will provide the random extraction of terms and steps to compose your own exclusive Lorem Ipsum.",
+            article.description,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodySmall,
@@ -90,10 +93,13 @@ fun ArticleInfo(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun AuthorDetail() {
+fun SourceInfo(article: Article) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            painterResource(R.drawable.ic_android), "",
+        Image(
+            painterResource(
+                getSourceIcon(article.sourceName)
+            ),
+            "",
             Modifier.size(36.dp)
         )
 
@@ -101,14 +107,15 @@ fun AuthorDetail() {
 
         Column() {
             Text(
-                "Android Developers",
+                article.sourceName,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             //Description
             Text(
-                "2 hours ago", style = MaterialTheme.typography.bodySmall,
+                text = formatRelativeTime(article.publishedAt),
+                style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 0.dp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -117,27 +124,37 @@ fun AuthorDetail() {
 }
 
 @Composable
-fun ArticleThumbnail() {
+fun ArticleThumbnail(article: Article, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .width(90.dp)
             .fillMaxHeight(),
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Image(
+        AsyncImage(
+            model = article.imageUrl,
+            contentDescription = article.title,
             modifier = Modifier
-                .padding(4.dp)
                 .size(90.dp)
                 .clip(RoundedCornerShape(8.dp)),
-            painter = painterResource(R.drawable.android_image),
             contentScale = ContentScale.Crop,
-            contentDescription = null,
+            error = painterResource(R.drawable.android_image),
+            fallback = painterResource(R.drawable.android_image)
         )
         Icon(
             painterResource(R.drawable.ic_bookmark),
             contentDescription = "Save article",
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@DrawableRes
+fun getSourceIcon(sourceName: String): Int {
+    return when (sourceName) {
+        "Android Developers" -> R.drawable.ic_android_small_logo
+        "Kotlin Blog" -> R.drawable.ic_kotlin_small_logo
+        else -> R.drawable.ic_android_small_logo
     }
 }

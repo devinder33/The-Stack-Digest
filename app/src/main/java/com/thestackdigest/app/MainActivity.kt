@@ -7,7 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.rememberNavController
 import com.thestackdigest.app.ui.feed.FeedRoute
+import com.thestackdigest.app.ui.navigation.AppNavigation
+import com.thestackdigest.app.ui.navigation.BottomNavigationBar
 import com.thestackdigest.app.ui.theme.TheStackDigestTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -18,8 +21,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TheStackDigestTheme {
-                Scaffold( modifier = Modifier.fillMaxSize() ) { innerPadding ->
-                    FeedRoute(innerPadding)
+
+                val navController = rememberNavController()
+
+                Scaffold(
+                    bottomBar = {
+                        BottomNavigationBar(
+                            navController = navController
+                        )
+                    },
+                    modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    AppNavigation(
+                        navController = navController,
+                        paddingValues = innerPadding
+                    )
                 }
             }
         }
