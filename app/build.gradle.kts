@@ -60,4 +60,5 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.retrofit)
 }
