@@ -5,6 +5,8 @@ import com.thestackdigest.app.data.remote.atom.toArticle
 import com.thestackdigest.app.data.remote.rss.RssParser
 import com.thestackdigest.app.data.remote.rss.toArticle
 import com.thestackdigest.app.domain.model.Article
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class FeedRemoteDataSource @Inject constructor(
@@ -15,7 +17,7 @@ class FeedRemoteDataSource @Inject constructor(
 
     suspend fun fetchRssArticles(
         source: FeedSource
-    ): List<Article> {
+    ): List<Article>  = withContext(Dispatchers.IO) {
 
         val xml = feedApi
             .getFeed(source.url)
@@ -25,7 +27,7 @@ class FeedRemoteDataSource @Inject constructor(
 
         val rssItems = rssParser.parse(xml)
 
-        return rssItems.map { item ->
+         rssItems.map { item ->
             item.toArticle(
                 sourceName = source.name
             )
@@ -34,7 +36,7 @@ class FeedRemoteDataSource @Inject constructor(
 
     suspend fun fetchAtomArticles(
         source: FeedSource
-    ): List<Article> {
+    ): List<Article> = withContext(Dispatchers.IO) {
 
         val xml = feedApi
             .getFeed(source.url)
@@ -44,7 +46,7 @@ class FeedRemoteDataSource @Inject constructor(
 
         val atomEntries = atomParser.parse(xml)
 
-        return atomEntries.map { entry ->
+         atomEntries.map { entry ->
             entry.toArticle(
                 sourceName = source.name
             )
