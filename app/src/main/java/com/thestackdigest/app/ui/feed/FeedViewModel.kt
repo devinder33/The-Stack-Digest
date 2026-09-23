@@ -61,14 +61,8 @@ class FeedViewModel @Inject constructor(
     }
 
     fun onCategorySelected(category: String){
-        val filteredArticles = if (category.equals("All", ignoreCase = true)) {
-            allArticles
-        } else {
-            allArticles.filter { article ->
-                article.categories.any {
-                    it.equals(category, ignoreCase = true)
-                }
-            }
+        val filteredArticles = allArticles.filter { article ->
+            matchesCategory(article, category)
         }
 
         _uiState.update {
@@ -76,6 +70,31 @@ class FeedViewModel @Inject constructor(
                 selectedCategory = category,
                 articles = filteredArticles
             )
+        }
+    }
+
+    private fun matchesCategory(
+        article: Article,
+        category: String
+    ): Boolean {
+
+        return when (category) {
+
+            "All" -> true
+
+            "Android" -> {
+                article.sourceName == "Android Developers"
+            }
+
+            "Kotlin" -> {
+                article.sourceName == "Kotlin Blog"
+            }
+
+            else -> {
+                article.categories.any {
+                    it.equals(category, ignoreCase = true)
+                }
+            }
         }
     }
 }

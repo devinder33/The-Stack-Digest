@@ -5,20 +5,45 @@ import com.thestackdigest.app.data.remote.FeedRemoteDataSource
 import com.thestackdigest.app.data.remote.feedSources
 import com.thestackdigest.app.domain.model.Article
 import com.thestackdigest.app.domain.repository.FeedRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 class FeedRepositoryImpl @Inject constructor(
-    private val remoteDataSource: FeedRemoteDataSource
+    private val remoteDataSource: FeedRemoteDataSource,
 ) : FeedRepository {
 
-    override suspend fun getArticles(): List<Article> {
+    override suspend fun getArticles(): List<Article> = coroutineScope {
 
-        val rssSources = feedSources.filter {
-            it.format == FeedFormat.RSS
-        }
+        feedSources.map { source ->
 
-        return rssSources.flatMap { source ->
-            remoteDataSource.fetchRssArticles(source)
+            async {
+
+                try {
+                    when (source.format) {
+
+                        FeedFormat.RSS -> {
+                            remoteDataSource.fetchRssArticles(source)
+                        }
+
+                        FeedFormat.ATOM -> {
+                            remoteDataSource.fetchAtomArticles(source)
+                        }
+                    }
+
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            }
         }
+            .awaitAll()
+            .flatten()
+            .sortedByDescending {
+                it.publishedAt
+            }
     }
 }
