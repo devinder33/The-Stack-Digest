@@ -15,23 +15,56 @@ import javax.inject.Inject
 @HiltViewModel
 class FeedViewModel @Inject constructor(
     private val repository: FeedRepository
-): ViewModel() {
+) : ViewModel() {
 
     private var allArticles: List<Article> = emptyList()
-
 
     private val _uiState = MutableStateFlow(
         FeedUiState()
     )
 
-    val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<FeedUiState> =
+        _uiState.asStateFlow()
 
     init {
-        loadArticles()
+        observeArticles()
+        refreshArticles()
     }
 
-    private fun loadArticles(){
+    private fun observeArticles() {
+
         viewModelScope.launch {
+
+            repository
+                .observeArticles()
+                .collect { articles ->
+
+                    allArticles = articles
+
+                    val selectedCategory =
+                        _uiState.value.selectedCategory
+
+                    val filteredArticles =
+                        articles.filter { article ->
+                            matchesCategory(
+                                article,
+                                selectedCategory
+                            )
+                        }
+
+                    _uiState.update {
+                        it.copy(
+                            articles = filteredArticles
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun refreshArticles() {
+
+        viewModelScope.launch {
+
             _uiState.update {
                 it.copy(
                     isLoading = true,
@@ -40,30 +73,37 @@ class FeedViewModel @Inject constructor(
             }
 
             try {
-                allArticles = repository.getArticles()
+
+                repository.refreshArticles()
+
+            } catch (e: Exception) {
 
                 _uiState.update {
                     it.copy(
-                        articles = allArticles,
-                        isLoading = false
+                        errorMessage = e.message
                     )
                 }
 
-            } catch (e: Exception) {
+            } finally {
+
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
-                        errorMessage = e.message
+                        isLoading = false
                     )
                 }
             }
         }
     }
 
-    fun onCategorySelected(category: String){
-        val filteredArticles = allArticles.filter { article ->
-            matchesCategory(article, category)
-        }
+    fun onCategorySelected(category: String) {
+
+        val filteredArticles =
+            allArticles.filter { article ->
+                matchesCategory(
+                    article,
+                    category
+                )
+            }
 
         _uiState.update {
             it.copy(
@@ -92,7 +132,10 @@ class FeedViewModel @Inject constructor(
 
             else -> {
                 article.categories.any {
-                    it.equals(category, ignoreCase = true)
+                    it.equals(
+                        category,
+                        ignoreCase = true
+                    )
                 }
             }
         }
