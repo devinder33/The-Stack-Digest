@@ -13,12 +13,20 @@ class FeedRepositoryImpl @Inject constructor(
 
     override suspend fun getArticles(): List<Article> {
 
-        val rssSources = feedSources.filter {
-            it.format == FeedFormat.RSS
-        }
+        return feedSources.flatMap { source ->
 
-        return rssSources.flatMap { source ->
-            remoteDataSource.fetchRssArticles(source)
+            when (source.format) {
+
+                FeedFormat.RSS -> {
+                    remoteDataSource.fetchRssArticles(source)
+                }
+
+                FeedFormat.ATOM -> {
+                    remoteDataSource.fetchAtomArticles(source)
+                }
+            }
+        }.sortedByDescending { article ->
+            article.publishedAt
         }
     }
 }
