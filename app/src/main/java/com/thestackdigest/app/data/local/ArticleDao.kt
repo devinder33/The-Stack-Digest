@@ -19,4 +19,26 @@ interface ArticleDao {
     suspend fun upsertArticles(
         articles: List<ArticleEntity>
     )
+
+    @Query(
+        """
+        SELECT id
+        FROM articles
+        WHERE isSaved = 1
+        """
+    )
+    suspend fun getSavedArticleIds(): List<String>
+
+    @Query(
+        """
+        UPDATE articles
+        SET isSaved = :isSaved
+        WHERE id = :articleId
+        """
+    )
+    suspend fun updateSavedState(
+        articleId: String,
+        isSaved: Boolean
+    )
+
 }

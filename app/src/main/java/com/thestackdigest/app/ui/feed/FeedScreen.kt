@@ -6,16 +6,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -28,13 +31,14 @@ import com.thestackdigest.app.ui.components.ArticleCard
 @Composable
 fun FeedRoute(
     paddingValues: PaddingValues,
-     viewModel: FeedViewModel = hiltViewModel()
+    viewModel: FeedViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     FeedScreen(
         paddingValues,
         uiState = uiState,
-        onCategorySelected = viewModel::onCategorySelected
+        onCategorySelected = viewModel::onCategorySelected,
+        onBookmarkClicked = viewModel::onBookmarkClicked
     )
 }
 
@@ -51,7 +55,8 @@ private fun FeedScreenPreview() {
             articles = fakeArticles,
             selectedCategory = "All"
         ),
-        onCategorySelected = {}
+        onCategorySelected = {},
+        onBookmarkClicked = {}
     )
 }
 
@@ -59,7 +64,8 @@ private fun FeedScreenPreview() {
 fun FeedScreen(
     paddingValues: PaddingValues,
     uiState: FeedUiState,
-    onCategorySelected: (String) -> Unit
+    onCategorySelected: (String) -> Unit,
+    onBookmarkClicked: (Article) -> Unit,
 ) {
     val categories = listOf(
         "All",
@@ -82,9 +88,45 @@ fun FeedScreen(
             onCategoryClicked = onCategorySelected
         )
 
-        Articles(
-            filteredList = uiState.articles
-        )
+        when {
+
+            uiState.isLoading &&
+                    uiState.articles.isEmpty() -> {
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            uiState.errorMessage != null &&
+                    uiState.articles.isEmpty() -> {
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = uiState.errorMessage
+                            ?: "Something went wrong"
+                    )
+                }
+            }
+
+            else -> {
+
+                Articles(
+                    filteredList = uiState.articles,
+                    onBookmarkClicked = onBookmarkClicked,
+                )
+            }
+        }
 
     }
 }
@@ -125,7 +167,7 @@ fun SingleChip(chipTitle: String, isSelected: Boolean, onCategoryClicked: (Strin
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(horizontal = 18.dp, vertical = 8.dp)
-            .clickable{
+            .clickable {
                 onCategoryClicked(chipTitle)
             }
     ) {
@@ -142,17 +184,21 @@ fun SingleChip(chipTitle: String, isSelected: Boolean, onCategoryClicked: (Strin
 }
 
 @Composable
-fun Articles(filteredList: List<Article>, modifier: Modifier = Modifier) {
+fun Articles(
+    filteredList: List<Article>,
+    onBookmarkClicked: (Article) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     LazyColumn(
-
         modifier = modifier.padding(top = 8.dp, bottom = 8.dp)
     ) {
         items(
             items = filteredList,
             key = { article -> article.id }
         ) { article ->
-
-            ArticleCard(article = article)
+            ArticleCard(article = article, {
+                onBookmarkClicked(article)
+            })
         }
     }
 }

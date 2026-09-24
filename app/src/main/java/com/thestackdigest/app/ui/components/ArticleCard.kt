@@ -14,8 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,7 +43,10 @@ fun ArticleCardPreview() {
 }*/
 
 @Composable
-fun ArticleCard(article: Article, modifier: Modifier = Modifier) {
+fun ArticleCard(
+    article: Article,
+    onBookmarkClicked: () -> Unit,
+    modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -62,7 +69,9 @@ fun ArticleCard(article: Article, modifier: Modifier = Modifier) {
 
             // Right column
             ArticleThumbnail(
-                article
+                article,
+                modifier,
+                onBookmarkClicked
             )
         }
     }
@@ -124,7 +133,7 @@ fun SourceInfo(article: Article) {
 }
 
 @Composable
-fun ArticleThumbnail(article: Article, modifier: Modifier = Modifier) {
+fun ArticleThumbnail(article: Article, modifier: Modifier = Modifier, onBookmarkClicked : ()-> Unit) {
     Column(
         modifier = modifier
             .width(90.dp)
@@ -142,11 +151,23 @@ fun ArticleThumbnail(article: Article, modifier: Modifier = Modifier) {
             error = painterResource(R.drawable.android_image),
             fallback = painterResource(R.drawable.android_image)
         )
-        Icon(
-            painterResource(R.drawable.ic_bookmark),
-            contentDescription = "Save article",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        IconButton(
+            onClick = onBookmarkClicked
+        ) {
+
+            Icon(
+                imageVector = if (article.isSaved) {
+                    Icons.Filled.Bookmark
+                } else {
+                    Icons.Outlined.BookmarkBorder
+                },
+                contentDescription = if (article.isSaved) {
+                    "Remove bookmark"
+                } else {
+                    "Save article"
+                }
+            )
+        }
     }
 }
 
