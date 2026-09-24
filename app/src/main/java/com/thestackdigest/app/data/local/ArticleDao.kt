@@ -8,12 +8,22 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ArticleDao {
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM articles
         ORDER BY publishedAt DESC
         """
     )
     fun observeArticles(): Flow<List<ArticleEntity>>
+
+    @Query(
+        """
+        SELECT * FROM articles
+        WHERE isSaved = 1
+        ORDER BY publishedAt DESC
+        """
+    )
+    fun observeSavedArticles(): Flow<List<ArticleEntity>>
 
     @Upsert
     suspend fun upsertArticles(
@@ -40,5 +50,4 @@ interface ArticleDao {
         articleId: String,
         isSaved: Boolean
     )
-
 }
