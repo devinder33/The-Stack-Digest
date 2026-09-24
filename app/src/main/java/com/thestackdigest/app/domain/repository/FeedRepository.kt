@@ -7,6 +7,9 @@ interface FeedRepository {
     //continuously read articles from Room
     fun observeArticles(): Flow<List<Article>>
 
+    //continuously read saved articles from Room
+    fun observeSavedArticles(): Flow<List<Article>>
+
     //fetch fresh articles from internet and save them to Room
     suspend fun refreshArticles()
 

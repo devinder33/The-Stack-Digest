@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.thestackdigest.app.ui.feed.FeedRoute
+import com.thestackdigest.app.ui.saved.SavedRoute
 import com.thestackdigest.app.ui.saved.SavedScreen
 import com.thestackdigest.app.ui.settings.SettingsScreen
 
@@ -32,7 +33,7 @@ fun AppNavigation(
         }
 
         composable(Routes.SAVED) {
-            SavedScreen(
+            SavedRoute(
                 paddingValues = paddingValues
             )
         }

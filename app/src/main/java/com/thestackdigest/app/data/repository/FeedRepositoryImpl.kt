@@ -111,4 +111,16 @@ class FeedRepositoryImpl @Inject constructor(
             isSaved = isSaved
         )
     }
+
+    override fun observeSavedArticles(): Flow<List<Article>> {
+
+        return articleDao
+            .observeSavedArticles()
+            .map { entities ->
+
+                entities.map { entity ->
+                    entity.toArticle()
+                }
+            }
+    }
 }
