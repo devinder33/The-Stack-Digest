@@ -31,13 +31,14 @@ import com.thestackdigest.app.ui.components.ArticleCard
 @Composable
 fun FeedRoute(
     paddingValues: PaddingValues,
-     viewModel: FeedViewModel = hiltViewModel()
+    viewModel: FeedViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     FeedScreen(
         paddingValues,
         uiState = uiState,
-        onCategorySelected = viewModel::onCategorySelected
+        onCategorySelected = viewModel::onCategorySelected,
+        onBookmarkClicked = viewModel::onBookmarkClicked
     )
 }
 
@@ -54,7 +55,8 @@ private fun FeedScreenPreview() {
             articles = fakeArticles,
             selectedCategory = "All"
         ),
-        onCategorySelected = {}
+        onCategorySelected = {},
+        onBookmarkClicked = {}
     )
 }
 
@@ -62,7 +64,8 @@ private fun FeedScreenPreview() {
 fun FeedScreen(
     paddingValues: PaddingValues,
     uiState: FeedUiState,
-    onCategorySelected: (String) -> Unit
+    onCategorySelected: (String) -> Unit,
+    onBookmarkClicked: (Article) -> Unit,
 ) {
     val categories = listOf(
         "All",
@@ -119,7 +122,8 @@ fun FeedScreen(
             else -> {
 
                 Articles(
-                    filteredList = uiState.articles
+                    filteredList = uiState.articles,
+                    onBookmarkClicked = onBookmarkClicked,
                 )
             }
         }
@@ -163,7 +167,7 @@ fun SingleChip(chipTitle: String, isSelected: Boolean, onCategoryClicked: (Strin
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(horizontal = 18.dp, vertical = 8.dp)
-            .clickable{
+            .clickable {
                 onCategoryClicked(chipTitle)
             }
     ) {
@@ -180,17 +184,21 @@ fun SingleChip(chipTitle: String, isSelected: Boolean, onCategoryClicked: (Strin
 }
 
 @Composable
-fun Articles(filteredList: List<Article>, modifier: Modifier = Modifier) {
+fun Articles(
+    filteredList: List<Article>,
+    onBookmarkClicked: (Article) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     LazyColumn(
-
         modifier = modifier.padding(top = 8.dp, bottom = 8.dp)
     ) {
         items(
             items = filteredList,
             key = { article -> article.id }
         ) { article ->
-
-            ArticleCard(article = article)
+            ArticleCard(article = article, {
+                onBookmarkClicked(article)
+            })
         }
     }
 }

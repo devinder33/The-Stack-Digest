@@ -8,13 +8,13 @@ import com.thestackdigest.app.data.remote.FeedRemoteDataSource
 import com.thestackdigest.app.data.remote.feedSources
 import com.thestackdigest.app.domain.model.Article
 import com.thestackdigest.app.domain.repository.FeedRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
 
 class FeedRepositoryImpl @Inject constructor(
     private val remoteDataSource: FeedRemoteDataSource,
@@ -57,6 +57,7 @@ class FeedRepositoryImpl @Inject constructor(
 
                     } catch (e: CancellationException) {
                         throw e
+
                     } catch (e: Exception) {
                         Result.failure(e)
                     }
@@ -64,25 +65,50 @@ class FeedRepositoryImpl @Inject constructor(
             }
             .awaitAll()
 
-        val successfulArticles = results
+        val articles = results
             .mapNotNull { result ->
                 result.getOrNull()
             }
             .flatten()
 
-        val allFailed = results.all {
-            it.isFailure
-        }
+        val allFailed =
+            results.isNotEmpty() &&
+                    results.all { result ->
+                        result.isFailure
+                    }
 
         if (allFailed) {
             throw results
-                .firstNotNullOf { it.exceptionOrNull() }
+                .firstNotNullOf { result ->
+                    result.exceptionOrNull()
+                }
         }
 
-        articleDao.upsertArticles(
-            successfulArticles.map {
-                it.toEntity()
-            }
+        val savedArticleIds =
+            articleDao
+                .getSavedArticleIds()
+                .toSet()
+
+        val entities = articles.map { article ->
+
+            article
+                .copy(
+                    isSaved = article.id in savedArticleIds
+                )
+                .toEntity()
+        }
+
+        articleDao.upsertArticles(entities)
+    }
+
+    override suspend fun setArticleSaved(
+        articleId: String,
+        isSaved: Boolean
+    ) {
+
+        articleDao.updateSavedState(
+            articleId = articleId,
+            isSaved = isSaved
         )
     }
 }

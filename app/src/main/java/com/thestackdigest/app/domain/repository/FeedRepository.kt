@@ -9,4 +9,10 @@ interface FeedRepository {
 
     //fetch fresh articles from internet and save them to Room
     suspend fun refreshArticles()
+
+    // save article
+    suspend fun setArticleSaved(
+        articleId: String,
+        isSaved: Boolean
+    )
 }

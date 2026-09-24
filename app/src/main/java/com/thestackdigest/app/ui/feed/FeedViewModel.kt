@@ -140,4 +140,17 @@ class FeedViewModel @Inject constructor(
             }
         }
     }
+
+    fun onBookmarkClicked(
+        article: Article
+    ) {
+
+        viewModelScope.launch {
+
+            repository.setArticleSaved(
+                articleId = article.id,
+                isSaved = !article.isSaved
+            )
+        }
+    }
 }
