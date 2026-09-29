@@ -64,7 +64,13 @@ fun AppNavigation(
         ) {
 
             SavedRoute(
-                paddingValues = paddingValues
+                paddingValues = paddingValues,
+                onArticleClicked = { article ->
+
+                    navController.navigate(
+                        Routes.detailRoute(article.id)
+                    )
+                }
             )
         }
 

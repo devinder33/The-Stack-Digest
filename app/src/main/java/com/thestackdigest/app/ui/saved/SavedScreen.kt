@@ -1,5 +1,6 @@
 package com.thestackdigest.app.ui.saved
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +24,7 @@ import com.thestackdigest.app.ui.feed.fakeArticles
 @Composable
 fun SavedRoute(
     paddingValues: PaddingValues,
+    onArticleClicked: (Article) -> Unit,
     viewModel: SavedViewModel = hiltViewModel()
 ) {
 
@@ -32,23 +34,8 @@ fun SavedRoute(
     SavedScreen(
         paddingValues = paddingValues,
         articles = savedArticles,
-        onBookmarkClicked = viewModel::onBookmarkClicked
-    )
-}
-
-@Preview(
-    showBackground = true,
-    showSystemUi = true
-)
-@Composable
-private fun SavedScreenPreview() {
-
-    SavedScreen(
-        paddingValues = PaddingValues(16.dp),
-        articles = fakeArticles.filter { article ->
-            article.isSaved
-        },
-        onBookmarkClicked = {}
+        onBookmarkClicked = viewModel::onBookmarkClicked,
+        onArticleClicked = onArticleClicked
     )
 }
 
@@ -56,7 +43,8 @@ private fun SavedScreenPreview() {
 fun SavedScreen(
     paddingValues: PaddingValues,
     articles: List<Article>,
-    onBookmarkClicked: (Article) -> Unit
+    onBookmarkClicked: (Article) -> Unit,
+    onArticleClicked: (Article) -> Unit
 ) {
 
     androidx.compose.foundation.layout.Column(
@@ -67,7 +55,7 @@ fun SavedScreen(
 
         AppBar(
             title = "Saved",
-            isShowSearch = false
+            showSearch = false
         )
 
         if (articles.isEmpty()) {
@@ -76,6 +64,7 @@ fun SavedScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
+
                 Text(
                     text = "No saved articles yet"
                 )
@@ -101,10 +90,28 @@ fun SavedScreen(
                         article = article,
                         onBookmarkClicked = {
                             onBookmarkClicked(article)
+                        },
+                        modifier = Modifier.clickable {
+                            onArticleClicked(article)
                         }
                     )
                 }
             }
         }
     }
+}
+
+@Preview(
+    showBackground = true,
+    showSystemUi = true
+)
+@Composable
+private fun SavedScreenPreview() {
+
+    SavedScreen(
+        paddingValues = PaddingValues(16.dp),
+        articles = fakeArticles.take(3),
+        onBookmarkClicked = {},
+        onArticleClicked = {}
+    )
 }

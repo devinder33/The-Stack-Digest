@@ -1,5 +1,7 @@
 package com.thestackdigest.app.ui.detail
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,6 +58,8 @@ import com.thestackdigest.app.ui.components.getSourceIcon
 import com.thestackdigest.app.ui.feed.FeedScreen
 import com.thestackdigest.app.ui.feed.FeedUiState
 import com.thestackdigest.app.ui.feed.fakeArticles
+import com.thestackdigest.app.ui.utils.estimateReadTime
+import com.thestackdigest.app.ui.utils.formatPublishedDate
 import com.thestackdigest.app.ui.utils.formatRelativeTime
 
 @Composable
@@ -66,6 +71,8 @@ fun ArticleDetailRoute(
 
     val article by
     viewModel.article.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
 
     val currentArticle = article
 
@@ -89,6 +96,33 @@ fun ArticleDetailRoute(
         onBackClick = onBackClick,
         onBookmarkClick = {
             viewModel.onBookmarkClicked(currentArticle)
+        },
+        onOpenBrowserClick = {
+            val intent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(currentArticle.articleUrl)
+            )
+            context.startActivity(intent)
+        },
+        {
+            val shareIntent = Intent(
+                Intent.ACTION_SEND
+            ).apply {
+
+                type = "text/plain"
+
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    "${currentArticle.title}\n${currentArticle.articleUrl}"
+                )
+            }
+
+            context.startActivity(
+                Intent.createChooser(
+                    shareIntent,
+                    "Share article"
+                )
+            )
         }
     )
 }
@@ -106,7 +140,9 @@ private fun ArticleDetailScreenPreview() {
         paddingValues = PaddingValues(16.dp),
         article = article,
         onBackClick = {},
-        onBookmarkClick = {}
+        onBookmarkClick = {},
+        {},
+        {}
     )
 }
 
@@ -115,7 +151,9 @@ fun ArticleDetailScreen(
     paddingValues: PaddingValues,
     article: Article,
     onBackClick: () -> Unit,
-    onBookmarkClick: () -> Unit
+    onBookmarkClick: () -> Unit,
+    onOpenBrowserClick: () -> Unit,
+    onShareClick: () -> Unit
 ) {
 
     LazyColumn(
@@ -136,7 +174,8 @@ fun ArticleDetailScreen(
             AppBarDetail(
                 article = article,
                 onBackClick = onBackClick,
-                onBookmarkClick = onBookmarkClick
+                onBookmarkClick = onBookmarkClick,
+                onShareClick = onShareClick
             )
 
             Spacer(
@@ -192,7 +231,7 @@ fun ArticleDetailScreen(
                     modifier = Modifier.height(24.dp)
                 )
 
-                BrowserButton()
+                BrowserButton(onOpenBrowserClick)
 
                 Spacer(
                     modifier = Modifier.height(24.dp)
@@ -206,7 +245,8 @@ fun ArticleDetailScreen(
 fun AppBarDetail(
     article: Article,
     onBackClick: () -> Unit,
-    onBookmarkClick: () -> Unit
+    onBookmarkClick: () -> Unit,
+    onShareClick: () -> Unit
 ) {
 
     Row(
@@ -245,9 +285,7 @@ fun AppBarDetail(
         }
 
         IconButton(
-            onClick = {
-                // Share next
-            }
+            onClick = onShareClick
         ) {
 
             Icon(
@@ -295,30 +333,45 @@ fun SourceInfo(article: Article) {
 }
 
 @Composable
-fun PublishedTimeInfo(article: Article) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+fun PublishedTimeInfo(
+    article: Article
+) {
 
-        // published at full date
+    val publishedDate =
+        formatPublishedDate(
+            article.publishedAt
+        )
+
+    val readTime =
+        estimateReadTime(
+            article.description
+        )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
         Text(
-            text = formatRelativeTime(article.publishedAt),
+            text = publishedDate,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Box(
             modifier = Modifier
                 .padding(horizontal = 8.dp)
-                .size(5.dp)
+                .size(4.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     shape = CircleShape
                 )
         )
 
         Text(
-            article.sourceName,
+            text = "$readTime min read",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -333,9 +386,11 @@ fun DescriptionText(article: Article) {
 }
 
 @Composable
-fun BrowserButton() {
+fun BrowserButton(
+    onClick: () -> Unit
+) {
     Button(
-        onClick = {},
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
