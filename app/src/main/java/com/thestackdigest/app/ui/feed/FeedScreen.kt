@@ -31,6 +31,7 @@ import com.thestackdigest.app.ui.components.ArticleCard
 @Composable
 fun FeedRoute(
     paddingValues: PaddingValues,
+    onArticleClicked: (Article) -> Unit,
     viewModel: FeedViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -38,7 +39,8 @@ fun FeedRoute(
         paddingValues,
         uiState = uiState,
         onCategorySelected = viewModel::onCategorySelected,
-        onBookmarkClicked = viewModel::onBookmarkClicked
+        onBookmarkClicked = viewModel::onBookmarkClicked,
+        onArticleClicked = onArticleClicked
     )
 }
 
@@ -56,7 +58,8 @@ private fun FeedScreenPreview() {
             selectedCategory = "All"
         ),
         onCategorySelected = {},
-        onBookmarkClicked = {}
+        onBookmarkClicked = {},
+        {}
     )
 }
 
@@ -66,6 +69,7 @@ fun FeedScreen(
     uiState: FeedUiState,
     onCategorySelected: (String) -> Unit,
     onBookmarkClicked: (Article) -> Unit,
+    onArticleClicked: (Article) -> Unit
 ) {
     val categories = listOf(
         "All",
@@ -124,6 +128,7 @@ fun FeedScreen(
                 Articles(
                     filteredList = uiState.articles,
                     onBookmarkClicked = onBookmarkClicked,
+                    onArticleClicked = onArticleClicked,
                 )
             }
         }
@@ -187,6 +192,7 @@ fun SingleChip(chipTitle: String, isSelected: Boolean, onCategoryClicked: (Strin
 fun Articles(
     filteredList: List<Article>,
     onBookmarkClicked: (Article) -> Unit,
+    onArticleClicked: (Article) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -198,6 +204,8 @@ fun Articles(
         ) { article ->
             ArticleCard(article = article, {
                 onBookmarkClicked(article)
+            },modifier = Modifier.clickable {
+                onArticleClicked(article)
             })
         }
     }
