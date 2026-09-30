@@ -19,11 +19,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,10 +61,12 @@ fun FeedRoute(
         onArticleClicked = onArticleClicked,
         onSearchClick = viewModel::onSearchClick,
         onSearchQueryChanged = viewModel::onSearchQueryChanged,
-        onSearchClose = viewModel::onSearchClose
+        onSearchClose = viewModel::onSearchClose,
+        onRefresh = viewModel::onRefresh
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     paddingValues: PaddingValues,
@@ -72,7 +76,8 @@ fun FeedScreen(
     onArticleClicked: (Article) -> Unit,
     onSearchClick: () -> Unit,
     onSearchQueryChanged: (String) -> Unit,
-    onSearchClose: () -> Unit
+    onSearchClose: () -> Unit,
+    onRefresh: () -> Unit
 ) {
 
     val categories = listOf(
@@ -121,7 +126,6 @@ fun FeedScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-
                     CircularProgressIndicator()
                 }
             }
@@ -135,7 +139,6 @@ fun FeedScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-
                     Text(
                         text = "No articles found"
                     )
@@ -151,7 +154,6 @@ fun FeedScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-
                     Text(
                         text = "Couldn't load articles"
                     )
@@ -160,12 +162,20 @@ fun FeedScreen(
 
             else -> {
 
-                Articles(
-                    articles = uiState.articles,
-                    onBookmarkClicked = onBookmarkClicked,
-                    onArticleClicked = onArticleClicked,
+                PullToRefreshBox(
+                    isRefreshing = uiState.isLoading &&
+                                uiState.articles.isNotEmpty(),
+                    onRefresh = onRefresh,
                     modifier = Modifier.weight(1f)
-                )
+                ) {
+
+                    Articles(
+                        articles = uiState.articles,
+                        onBookmarkClicked = onBookmarkClicked,
+                        onArticleClicked = onArticleClicked,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
@@ -348,6 +358,7 @@ private fun FeedScreenPreview() {
         onArticleClicked = {},
         onSearchClick = {},
         onSearchQueryChanged = {},
-        onSearchClose = {}
+        onSearchClose = {},
+        onRefresh = {}
     )
 }

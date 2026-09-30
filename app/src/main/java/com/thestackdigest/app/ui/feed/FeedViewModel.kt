@@ -230,4 +230,8 @@ class FeedViewModel @Inject constructor(
                     )
                 }
     }
+
+    fun onRefresh() {
+        refreshArticles()
+    }
 }
