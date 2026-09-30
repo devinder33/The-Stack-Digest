@@ -25,6 +25,18 @@ interface ArticleDao {
     )
     fun observeSavedArticles(): Flow<List<ArticleEntity>>
 
+    @Query(
+        """
+        SELECT * FROM articles
+        WHERE id = :articleId
+        LIMIT 1
+        """
+    )
+    fun observeArticle(
+        articleId: String
+    ): Flow<ArticleEntity?>
+
+
     @Upsert
     suspend fun upsertArticles(
         articles: List<ArticleEntity>

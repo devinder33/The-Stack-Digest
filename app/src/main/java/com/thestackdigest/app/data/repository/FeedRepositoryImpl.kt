@@ -123,4 +123,15 @@ class FeedRepositoryImpl @Inject constructor(
                 }
             }
     }
+
+    override fun observeArticle(
+        articleId: String
+    ): Flow<Article?> {
+
+        return articleDao
+            .observeArticle(articleId)
+            .map { entity ->
+                entity?.toArticle()
+            }
+    }
 }

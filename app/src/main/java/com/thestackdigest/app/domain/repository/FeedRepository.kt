@@ -7,6 +7,11 @@ interface FeedRepository {
     //continuously read articles from Room
     fun observeArticles(): Flow<List<Article>>
 
+    // get single article on basis of id
+    fun observeArticle(
+        articleId: String
+    ): Flow<Article?>
+
     //continuously read saved articles from Room
     fun observeSavedArticles(): Flow<List<Article>>
 

@@ -1,5 +1,9 @@
 package com.thestackdigest.app.ui.utils
 
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
 
 fun formatRelativeTime(
     timestamp: Long,
@@ -20,4 +24,44 @@ fun formatRelativeTime(
         days < 7 -> "$days days ago"
         else -> "$days days ago"
     }
+}
+
+fun formatPublishedDate(
+    timestamp: Long
+): String {
+
+    if (timestamp <= 0L) {
+        return ""
+    }
+
+    return Instant
+        .ofEpochMilli(timestamp)
+        .atZone(ZoneId.systemDefault())
+        .format(
+            DateTimeFormatter.ofPattern(
+                "MMM d, yyyy"
+            )
+        )
+}
+
+fun estimateReadTime(
+    text: String
+): Int {
+
+    if (text.isBlank()) {
+        return 1
+    }
+
+    val wordCount = text
+        .trim()
+        .split(Regex("\\s+"))
+        .size
+
+    val wordsPerMinute = 200
+
+    return maxOf(
+        1,
+        (wordCount + wordsPerMinute - 1) /
+                wordsPerMinute
+    )
 }
