@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.thestackdigest.app.domain.model.Article
 import com.thestackdigest.app.domain.repository.FeedRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,9 +20,10 @@ class FeedViewModel @Inject constructor(
 
     private var allArticles: List<Article> = emptyList()
 
-    private val _uiState = MutableStateFlow(
-        FeedUiState()
-    )
+    private val _uiState =
+        MutableStateFlow(
+            FeedUiState()
+        )
 
     val uiState: StateFlow<FeedUiState> =
         _uiState.asStateFlow()
@@ -41,22 +43,7 @@ class FeedViewModel @Inject constructor(
 
                     allArticles = articles
 
-                    val selectedCategory =
-                        _uiState.value.selectedCategory
-
-                    val filteredArticles =
-                        articles.filter { article ->
-                            matchesCategory(
-                                article,
-                                selectedCategory
-                            )
-                        }
-
-                    _uiState.update {
-                        it.copy(
-                            articles = filteredArticles
-                        )
-                    }
+                    updateFilteredArticles()
                 }
         }
     }
@@ -75,6 +62,9 @@ class FeedViewModel @Inject constructor(
             try {
 
                 repository.refreshArticles()
+
+            } catch (e: CancellationException) {
+                throw e
 
             } catch (e: Exception) {
 
@@ -95,19 +85,90 @@ class FeedViewModel @Inject constructor(
         }
     }
 
-    fun onCategorySelected(category: String) {
+    fun onCategorySelected(
+        category: String
+    ) {
+
+        _uiState.update {
+            it.copy(
+                selectedCategory = category
+            )
+        }
+
+        updateFilteredArticles()
+    }
+
+    fun onSearchQueryChanged(
+        query: String
+    ) {
+
+        _uiState.update {
+            it.copy(
+                searchQuery = query
+            )
+        }
+
+        updateFilteredArticles()
+    }
+
+    fun onSearchClick() {
+
+        _uiState.update {
+            it.copy(
+                isSearchActive = true
+            )
+        }
+    }
+
+    fun onSearchClose() {
+
+        _uiState.update {
+            it.copy(
+                isSearchActive = false,
+                searchQuery = ""
+            )
+        }
+
+        updateFilteredArticles()
+    }
+
+    fun onBookmarkClicked(
+        article: Article
+    ) {
+
+        viewModelScope.launch {
+
+            repository.setArticleSaved(
+                articleId = article.id,
+                isSaved = !article.isSaved
+            )
+        }
+    }
+
+    private fun updateFilteredArticles() {
+
+        val state = _uiState.value
 
         val filteredArticles =
             allArticles.filter { article ->
-                matchesCategory(
-                    article,
-                    category
-                )
+
+                val matchesCategory =
+                    matchesCategory(
+                        article = article,
+                        category = state.selectedCategory
+                    )
+
+                val matchesSearch =
+                    matchesSearch(
+                        article = article,
+                        query = state.searchQuery
+                    )
+
+                matchesCategory && matchesSearch
             }
 
         _uiState.update {
             it.copy(
-                selectedCategory = category,
                 articles = filteredArticles
             )
         }
@@ -141,16 +202,32 @@ class FeedViewModel @Inject constructor(
         }
     }
 
-    fun onBookmarkClicked(
-        article: Article
-    ) {
+    private fun matchesSearch(
+        article: Article,
+        query: String
+    ): Boolean {
 
-        viewModelScope.launch {
-
-            repository.setArticleSaved(
-                articleId = article.id,
-                isSaved = !article.isSaved
-            )
+        if (query.isBlank()) {
+            return true
         }
+
+        return article.title.contains(
+            query,
+            ignoreCase = true
+        ) ||
+                article.description.contains(
+                    query,
+                    ignoreCase = true
+                ) ||
+                article.sourceName.contains(
+                    query,
+                    ignoreCase = true
+                ) ||
+                article.categories.any {
+                    it.contains(
+                        query,
+                        ignoreCase = true
+                    )
+                }
     }
 }

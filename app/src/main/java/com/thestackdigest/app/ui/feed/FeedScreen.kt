@@ -6,20 +6,33 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -32,34 +45,21 @@ import com.thestackdigest.app.ui.components.ArticleCard
 fun FeedRoute(
     paddingValues: PaddingValues,
     onArticleClicked: (Article) -> Unit,
-    viewModel: FeedViewModel = hiltViewModel(),
+    viewModel: FeedViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val uiState by
+    viewModel.uiState.collectAsStateWithLifecycle()
+
     FeedScreen(
-        paddingValues,
+        paddingValues = paddingValues,
         uiState = uiState,
         onCategorySelected = viewModel::onCategorySelected,
         onBookmarkClicked = viewModel::onBookmarkClicked,
-        onArticleClicked = onArticleClicked
-    )
-}
-
-@Preview(
-    showBackground = true,
-    showSystemUi = true
-)
-@Composable
-private fun FeedScreenPreview() {
-
-    FeedScreen(
-        paddingValues = PaddingValues(16.dp),
-        uiState = FeedUiState(
-            articles = fakeArticles,
-            selectedCategory = "All"
-        ),
-        onCategorySelected = {},
-        onBookmarkClicked = {},
-        {}
+        onArticleClicked = onArticleClicked,
+        onSearchClick = viewModel::onSearchClick,
+        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+        onSearchClose = viewModel::onSearchClose
     )
 }
 
@@ -69,8 +69,12 @@ fun FeedScreen(
     uiState: FeedUiState,
     onCategorySelected: (String) -> Unit,
     onBookmarkClicked: (Article) -> Unit,
-    onArticleClicked: (Article) -> Unit
+    onArticleClicked: (Article) -> Unit,
+    onSearchClick: () -> Unit,
+    onSearchQueryChanged: (String) -> Unit,
+    onSearchClose: () -> Unit
 ) {
+
     val categories = listOf(
         "All",
         "Android",
@@ -81,10 +85,24 @@ fun FeedScreen(
 
     Column(
         modifier = Modifier
+            .fillMaxSize()
             .padding(paddingValues)
     ) {
 
-        AppBar("The Stack Digest", true)
+        AppBar(
+            title = "The Stack Digest",
+            showSearch = !uiState.isSearchActive,
+            onSearchClick = onSearchClick
+        )
+
+        if (uiState.isSearchActive) {
+
+            FeedSearchBar(
+                query = uiState.searchQuery,
+                onQueryChanged = onSearchQueryChanged,
+                onCloseClick = onSearchClose
+            )
+        }
 
         Chips(
             categories = categories,
@@ -103,7 +121,24 @@ fun FeedScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
+
                     CircularProgressIndicator()
+                }
+            }
+
+            uiState.searchQuery.isNotBlank() &&
+                    uiState.articles.isEmpty() -> {
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+
+                    Text(
+                        text = "No articles found"
+                    )
                 }
             }
 
@@ -116,9 +151,9 @@ fun FeedScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
+
                     Text(
-                        text = uiState.errorMessage
-                            ?: "Something went wrong"
+                        text = "Couldn't load articles"
                     )
                 }
             }
@@ -126,43 +161,111 @@ fun FeedScreen(
             else -> {
 
                 Articles(
-                    filteredList = uiState.articles,
+                    articles = uiState.articles,
                     onBookmarkClicked = onBookmarkClicked,
                     onArticleClicked = onArticleClicked,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
-
     }
 }
 
 @Composable
-fun Chips(categories: List<String>, selectedCategory: String, onCategoryClicked: (String) -> Unit) {
+fun FeedSearchBar(
+    query: String,
+    onQueryChanged: (String) -> Unit,
+    onCloseClick: () -> Unit
+) {
+
+    val focusRequester = remember {
+        FocusRequester()
+    }
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(Unit) {
+
+        focusRequester.requestFocus()
+
+        keyboardController?.show()
+    }
+
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChanged,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = 16.dp,
+                vertical = 8.dp
+            )
+            .focusRequester(focusRequester),
+        placeholder = {
+            Text(
+                text = "Search articles"
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Outlined.Search,
+                contentDescription = null
+            )
+        },
+        trailingIcon = {
+            IconButton(
+                onClick = onCloseClick
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Close search"
+                )
+            }
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(16.dp)
+    )
+}
+
+@Composable
+fun Chips(
+    categories: List<String>,
+    selectedCategory: String,
+    onCategoryClicked: (String) -> Unit
+) {
+
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp),
-        contentPadding = PaddingValues(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.Absolute.SpaceEvenly
+        contentPadding = PaddingValues(
+            horizontal = 8.dp
+        ),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+
         items(
-            categories
+            items = categories
         ) { title ->
+
             SingleChip(
                 chipTitle = title,
                 isSelected = title == selectedCategory,
-                onCategoryClicked = {
-                    onCategoryClicked(title)
-                }
+                onCategoryClicked = onCategoryClicked
             )
         }
     }
 }
 
 @Composable
-fun SingleChip(chipTitle: String, isSelected: Boolean, onCategoryClicked: (String) -> Unit) {
+fun SingleChip(
+    chipTitle: String,
+    isSelected: Boolean,
+    onCategoryClicked: (String) -> Unit
+) {
+
     Box(
-        Modifier
+        modifier = Modifier
             .background(
                 color = if (isSelected) {
                     MaterialTheme.colorScheme.primary
@@ -171,13 +274,17 @@ fun SingleChip(chipTitle: String, isSelected: Boolean, onCategoryClicked: (Strin
                 },
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(horizontal = 18.dp, vertical = 8.dp)
             .clickable {
                 onCategoryClicked(chipTitle)
             }
+            .padding(
+                horizontal = 18.dp,
+                vertical = 8.dp
+            )
     ) {
+
         Text(
-            chipTitle,
+            text = chipTitle,
             style = MaterialTheme.typography.bodyMedium,
             color = if (isSelected) {
                 MaterialTheme.colorScheme.onPrimary
@@ -190,23 +297,57 @@ fun SingleChip(chipTitle: String, isSelected: Boolean, onCategoryClicked: (Strin
 
 @Composable
 fun Articles(
-    filteredList: List<Article>,
+    articles: List<Article>,
     onBookmarkClicked: (Article) -> Unit,
     onArticleClicked: (Article) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
+
     LazyColumn(
-        modifier = modifier.padding(top = 8.dp, bottom = 8.dp)
+        modifier = modifier.padding(
+            top = 8.dp,
+            bottom = 8.dp
+        )
     ) {
+
         items(
-            items = filteredList,
-            key = { article -> article.id }
+            items = articles,
+            key = { article ->
+                article.id
+            }
         ) { article ->
-            ArticleCard(article = article, {
-                onBookmarkClicked(article)
-            },modifier = Modifier.clickable {
-                onArticleClicked(article)
-            })
+
+            ArticleCard(
+                article = article,
+                onBookmarkClicked = {
+                    onBookmarkClicked(article)
+                },
+                modifier = Modifier.clickable {
+                    onArticleClicked(article)
+                }
+            )
         }
     }
+}
+
+@Preview(
+    showBackground = true,
+    showSystemUi = true
+)
+@Composable
+private fun FeedScreenPreview() {
+
+    FeedScreen(
+        paddingValues = PaddingValues(16.dp),
+        uiState = FeedUiState(
+            articles = fakeArticles,
+            selectedCategory = "All"
+        ),
+        onCategorySelected = {},
+        onBookmarkClicked = {},
+        onArticleClicked = {},
+        onSearchClick = {},
+        onSearchQueryChanged = {},
+        onSearchClose = {}
+    )
 }
