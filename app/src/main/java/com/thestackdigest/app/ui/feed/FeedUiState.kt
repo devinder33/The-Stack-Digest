@@ -5,6 +5,8 @@ import com.thestackdigest.app.domain.model.Article
 data class FeedUiState(
     val articles: List<Article> = emptyList(),
     val selectedCategory: String = "All",
+    val searchQuery: String = "",
+    val isSearchActive: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
