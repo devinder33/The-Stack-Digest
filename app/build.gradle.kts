@@ -63,7 +63,10 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.retrofit)
     implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.room.ktx)
-
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.room.compiler)
+
 }
