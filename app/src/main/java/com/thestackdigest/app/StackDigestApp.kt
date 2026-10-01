@@ -25,5 +25,7 @@ class StackDigestApp :
         super.onCreate()
 
         FeedRefreshScheduler.schedule(this)
+
+        //FeedRefreshScheduler.runOnceForTesting(this)
     }
 }

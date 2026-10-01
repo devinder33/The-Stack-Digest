@@ -1,6 +1,7 @@
 package com.thestackdigest.app.data.worker
 
 import android.content.Context
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -20,13 +21,29 @@ class FeedRefreshWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
 
+        Log.d(
+            "FeedRefreshWorker",
+            "Worker started"
+        )
+
         return try {
 
             repository.refreshArticles()
 
+            Log.d(
+                "FeedRefreshWorker",
+                "Feed refresh successful"
+            )
+
             Result.success()
 
         } catch (e: Exception) {
+
+            Log.e(
+                "FeedRefreshWorker",
+                "Feed refresh failed",
+                e
+            )
 
             Result.retry()
         }

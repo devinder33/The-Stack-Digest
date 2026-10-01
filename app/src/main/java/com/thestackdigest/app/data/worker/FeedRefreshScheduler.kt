@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
@@ -39,5 +40,26 @@ object FeedRefreshScheduler {
                 ExistingPeriodicWorkPolicy.UPDATE,
                 workRequest
             )
+    }
+
+    fun runOnceForTesting(
+        context: Context
+    ) {
+
+        val constraints =
+            Constraints.Builder()
+                .setRequiredNetworkType(
+                    NetworkType.CONNECTED
+                )
+                .build()
+
+        val workRequest =
+            OneTimeWorkRequestBuilder<FeedRefreshWorker>()
+                .setConstraints(constraints)
+                .build()
+
+        WorkManager
+            .getInstance(context)
+            .enqueue(workRequest)
     }
 }
