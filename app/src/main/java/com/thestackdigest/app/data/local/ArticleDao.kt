@@ -62,4 +62,7 @@ interface ArticleDao {
         articleId: String,
         isSaved: Boolean
     )
+
+    @Query("SELECT id FROM articles")
+    suspend fun getAllArticleIds(): List<String>    
 }

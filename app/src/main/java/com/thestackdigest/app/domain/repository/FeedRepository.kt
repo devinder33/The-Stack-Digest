@@ -16,7 +16,7 @@ interface FeedRepository {
     fun observeSavedArticles(): Flow<List<Article>>
 
     //fetch fresh articles from internet and save them to Room
-    suspend fun refreshArticles()
+    suspend fun refreshArticles(): List<Article>
 
     // save article
     suspend fun setArticleSaved(

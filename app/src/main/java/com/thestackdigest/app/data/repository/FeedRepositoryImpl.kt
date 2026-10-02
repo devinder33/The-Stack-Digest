@@ -33,73 +33,98 @@ class FeedRepositoryImpl @Inject constructor(
             }
     }
 
-    override suspend fun refreshArticles() = coroutineScope {
+    override suspend fun refreshArticles(): List<Article> =
+        coroutineScope {
 
-        val results = feedSources
-            .map { source ->
+            val existingArticleIds =
+                articleDao
+                    .getAllArticleIds()
+                    .toSet()
 
-                async {
+            val results =
+                feedSources
+                    .map { source ->
 
-                    try {
+                        async {
 
-                        Result.success(
-                            when (source.format) {
+                            try {
 
-                                FeedFormat.RSS -> {
-                                    remoteDataSource.fetchRssArticles(source)
-                                }
+                                val articles =
+                                    when (source.format) {
 
-                                FeedFormat.ATOM -> {
-                                    remoteDataSource.fetchAtomArticles(source)
-                                }
+                                        FeedFormat.RSS ->
+                                            remoteDataSource
+                                                .fetchRssArticles(source)
+
+                                        FeedFormat.ATOM ->
+                                            remoteDataSource
+                                                .fetchAtomArticles(source)
+                                    }
+
+                                Result.success(articles)
+
+                            } catch (e: CancellationException) {
+
+                                throw e
+
+                            } catch (e: Exception) {
+
+                                Result.failure(e)
                             }
+                        }
+                    }
+                    .awaitAll()
+
+            if (
+                results.isNotEmpty() &&
+                results.all { it.isFailure }
+            ) {
+
+                throw results
+                    .first()
+                    .exceptionOrNull()
+                    ?: Exception("Unable to refresh feeds")
+            }
+
+            val fetchedArticles =
+                results
+                    .mapNotNull {
+                        it.getOrNull()
+                    }
+                    .flatten()
+
+            val newArticles =
+                if (existingArticleIds.isEmpty()) {
+
+                    emptyList()
+
+                } else {
+
+                    fetchedArticles.filter { article ->
+                        article.id !in existingArticleIds
+                    }
+                }
+
+            val savedArticleIds =
+                articleDao
+                    .getSavedArticleIds()
+                    .toSet()
+
+            val entities =
+                fetchedArticles.map { article ->
+
+                    article
+                        .copy(
+                            isSaved =
+                                article.id in savedArticleIds
                         )
-
-                    } catch (e: CancellationException) {
-                        throw e
-
-                    } catch (e: Exception) {
-                        Result.failure(e)
-                    }
+                        .toEntity()
                 }
-            }
-            .awaitAll()
 
-        val articles = results
-            .mapNotNull { result ->
-                result.getOrNull()
-            }
-            .flatten()
+            articleDao.upsertArticles(entities)
 
-        val allFailed =
-            results.isNotEmpty() &&
-                    results.all { result ->
-                        result.isFailure
-                    }
-
-        if (allFailed) {
-            throw results
-                .firstNotNullOf { result ->
-                    result.exceptionOrNull()
-                }
+            newArticles
         }
-
-        val savedArticleIds =
-            articleDao
-                .getSavedArticleIds()
-                .toSet()
-
-        val entities = articles.map { article ->
-
-            article
-                .copy(
-                    isSaved = article.id in savedArticleIds
-                )
-                .toEntity()
-        }
-
-        articleDao.upsertArticles(entities)
-    }
 
     override suspend fun setArticleSaved(
         articleId: String,
