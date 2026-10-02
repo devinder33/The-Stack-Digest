@@ -1,43 +1,74 @@
 package com.thestackdigest.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
-import androidx.navigation.compose.rememberNavController
-import com.thestackdigest.app.ui.feed.FeedRoute
-import com.thestackdigest.app.ui.navigation.AppNavigation
-import com.thestackdigest.app.ui.navigation.BottomNavigationBar
-import com.thestackdigest.app.ui.theme.TheStackDigestTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.thestackdigest.app.ui.StackDigestRoot
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
+
+    private var notificationArticleId
+            by mutableStateOf<String?>(null)
+
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
+
+        notificationArticleId =
+            consumeNotificationArticleId(intent)
+
         setContent {
-            TheStackDigestTheme {
 
-                val navController = rememberNavController()
-
-                Scaffold(
-                    bottomBar = {
-                        BottomNavigationBar(
-                            navController = navController
-                        )
-                    },
-                    modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AppNavigation(
-                        navController = navController,
-                        paddingValues = innerPadding
-                    )
+            StackDigestRoot(
+                notificationArticleId =
+                    notificationArticleId,
+                onNotificationArticleHandled = {
+                    notificationArticleId = null
                 }
-            }
+            )
         }
     }
-}
 
+    override fun onNewIntent(
+        intent: Intent
+    ) {
+        super.onNewIntent(intent)
+
+        setIntent(intent)
+
+        notificationArticleId =
+            consumeNotificationArticleId(intent)
+    }
+
+    private fun consumeNotificationArticleId(
+        intent: Intent
+    ): String? {
+
+        val articleId =
+            intent.getStringExtra(
+                EXTRA_ARTICLE_ID
+            )
+
+        intent.removeExtra(
+            EXTRA_ARTICLE_ID
+        )
+
+        return articleId
+    }
+
+    companion object {
+
+        const val EXTRA_ARTICLE_ID =
+            "extra_article_id"
+    }
+}
