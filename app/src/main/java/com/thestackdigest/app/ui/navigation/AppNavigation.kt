@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 import com.thestackdigest.app.ui.detail.ArticleDetailRoute
 import com.thestackdigest.app.ui.feed.FeedRoute
 import com.thestackdigest.app.ui.saved.SavedRoute
+import com.thestackdigest.app.ui.settings.SettingsRoute
 import com.thestackdigest.app.ui.settings.SettingsScreen
 
 object Routes {
@@ -78,7 +79,7 @@ fun AppNavigation(
             route = Routes.SETTINGS
         ) {
 
-            SettingsScreen(
+            SettingsRoute(
                 paddingValues = paddingValues
             )
         }
